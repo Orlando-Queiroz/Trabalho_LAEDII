@@ -1,6 +1,5 @@
 #include "tabela_hash.h"
 
-
 void normalizar_telefone(const char *entrada, char *saida) { 
     int j = 0; 
     for (int i = 0; entrada[i] != '\0'; i++) {
@@ -11,10 +10,10 @@ void normalizar_telefone(const char *entrada, char *saida) {
     saida[j] = '\0';
 }
 
-// H2: multiplicação => h(k) = floor(m * ((k * A) mod 1))
+// H2: Método da Multiplicação
 int funcao_hash_h2(const char *telefone_norm, int m) {
     unsigned long long k = strtoull(telefone_norm, NULL, 10);
-    double A = 0.6180339887; // parte fracionária de (sqrt(5) - 1) / 2
+    double A = 0.6180339887; 
     double produto = k * A; 
     double parte_fracionaria = produto - floor(produto);
     return (int)floor(m * parte_fracionaria);
@@ -29,24 +28,21 @@ tabelahash* criar_tabela(int capacidade) {
     return th;
 }
 
-// E2.3 + C1: inserção lista circular simples 
+// E2.3 + C1: Inserção na Lista Circular Simples
 void inserir(tabelahash *th, contato c) {
     char tel_norm[20];
     normalizar_telefone(c.telefone, tel_norm);
     strcpy(c.telefone, tel_norm);
 
-    if (buscar(th, tel_norm) != NULL) {
-        return; 
-    }
+    if (buscar(th, tel_norm) != NULL) return; // Evita chaves duplicadas
 
-    int idx = funcao_hash_h2(tel_norm, th->capacidade); // calcula o índice do bucket
-
+    int idx = funcao_hash_h2(tel_norm, th->capacidade);
     No *novo = (No*) malloc(sizeof(No)); 
     novo->info = c;
 
     if (th->vetor[idx] == NULL) {
         th->vetor[idx] = novo;
-        novo->prox = novo; 
+        novo->prox = novo; // Circular: aponta para si mesmo
     } else {
         th->total_colisoes++;
         novo->prox = th->vetor[idx]->prox;
@@ -74,7 +70,6 @@ contato* buscar(tabelahash *th, const char *telefone) {
 
     return NULL;
 }
-
 
 int atualizar(tabelahash *th, contato c) {
     char tel_norm[20];
@@ -109,13 +104,13 @@ int remover(tabelahash *th, const char *telefone) {
     do {
         if (strcmp(atual->info.telefone, tel_norm) == 0) {
             if (atual == atual->prox) {
-                th->vetor[idx] = NULL;
+                th->vetor[idx] = NULL; 
             } else {
                 if (atual == inicio) {
-                    th->vetor[idx] = atual->prox;
+                    th->vetor[idx] = atual->prox; 
                     ultimo->prox = th->vetor[idx];
                 } else {
-                    anterior->prox = atual->prox;
+                    anterior->prox = atual->prox; 
                 }
             }
             free(atual);
@@ -130,9 +125,8 @@ int remover(tabelahash *th, const char *telefone) {
 }
 
 void exibirEstrutura(tabelahash *th) {
-    printf(" \n --- ESTADO DA TABELA HASH --- \n (m=%d, n=%d, Colisoes=%d)\n",
-
-           th->capacidade, th->total_elementos, th->total_colisoes);
+    printf("\n--- ESTADO DA TABELA HASH ---\n");
+    printf("(m=%d, n=%d, Colisoes=%d)\n", th->capacidade, th->total_elementos, th->total_colisoes);
 
     for (int i = 0; i < th->capacidade; i++) {
         printf("Bucket [%02d]: ", i);
