@@ -1,16 +1,13 @@
 #include "tabela_hash.h"
 #include <time.h>
+#include <string.h>
+#include <stdio.h>
 
 // FUNÇÕES AUXILIARES
 
 void limpar_buffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
-}
-
-void pausar() {
-    printf("\n[Pressione ENTER para continuar...]");
-    getchar(); 
 }
 
 void ler_texto(char *buffer, int tamanho) {
@@ -39,13 +36,26 @@ void modulo_interativo() {
         limpar_buffer(); 
 
         if (opcao == 1) {
-            contato c;
-            printf("Telefone (Chave): "); ler_texto(c.telefone, sizeof(c.telefone));
-            printf("Nome: "); ler_texto(c.nome, sizeof(c.nome));
-            printf("E-mail: "); ler_texto(c.email, sizeof(c.email));
-            printf("Observacao: "); ler_texto(c.observacao, sizeof(c.observacao));
-            inserir(th, c);
-            printf("Contato inserido com sucesso!\n");
+            char tel[20];
+            printf("Telefone (Chave): "); ler_texto(tel, sizeof(tel));
+            
+            // CHECAGEM DE TELEFONE VAZIO
+            if (tel[0] == '\0') {
+                printf("-> Erro: O telefone nao pode ser vazio!\n");
+            }
+            
+            // CHECAGEM PRÉVIA: O telefone já existe?
+            else if (buscar(th, tel) != NULL) {
+                printf("-> Erro: Este telefone ja esta cadastrado!\n");
+            } else {
+                contato c;
+                strcpy(c.telefone, tel);
+                printf("Nome: "); ler_texto(c.nome, sizeof(c.nome));
+                printf("E-mail: "); ler_texto(c.email, sizeof(c.email));
+                printf("Observacao: "); ler_texto(c.observacao, sizeof(c.observacao));
+                inserir(th, c);
+                printf("-> Contato inserido com sucesso!\n");
+            }
         } 
         else if (opcao == 2) {
             char tel[20];
@@ -55,13 +65,25 @@ void modulo_interativo() {
             else printf("Contato nao encontrado.\n");
         }
         else if (opcao == 3) {
-            contato c;
-            printf("Telefone para atualizar: "); ler_texto(c.telefone, sizeof(c.telefone));
-            printf("Novo Nome: "); ler_texto(c.nome, sizeof(c.nome));
-            printf("Novo E-mail: "); ler_texto(c.email, sizeof(c.email));
-            printf("Nova Observacao: "); ler_texto(c.observacao, sizeof(c.observacao));
-            if (atualizar(th, c)) printf("Contato atualizado!\n");
-            else printf("Contato nao encontrado.\n");
+            char tel[20];
+            printf("Telefone para atualizar: "); ler_texto(tel, sizeof(tel));
+
+            if (tel[0] == '\0') {
+                printf("-> Erro: O telefone nao pode ser vazio!\n");
+            }
+            
+            // CHECAGEM PRÉVIA: O telefone existe para ser atualizado?
+            else if (buscar(th, tel) == NULL) {
+                printf("-> Erro: Contato nao encontrado. Atualizacao cancelada.\n");
+            } else {
+                contato c;
+                strcpy(c.telefone, tel);
+                printf("Novo Nome: "); ler_texto(c.nome, sizeof(c.nome));
+                printf("Novo E-mail: "); ler_texto(c.email, sizeof(c.email));
+                printf("Nova Observacao: "); ler_texto(c.observacao, sizeof(c.observacao));
+                atualizar(th, c);
+                printf("-> Contato atualizado com sucesso!\n");
+            }
         }
         else if (opcao == 4) {
             char tel[20];
@@ -80,7 +102,7 @@ void modulo_interativo() {
 
 void modulo_analise_experimental() {
     int tamanhos[] = {100, 1000, 10000}; 
-    int repeticoes = 5; 
+    int repeticoes = 1000; 
 
     printf("\n========================================================\n");
     printf("           TESTE DE CARGA           \n");
@@ -94,8 +116,7 @@ void modulo_analise_experimental() {
         double t_ins = 0, t_busca_ok = 0, t_busca_aus = 0;
         int colisoes = 0;
 
-        printf("-> Processando carga de %d registros... ", n);
-        fflush(stdout); 
+        printf("-> Processando carga de %d registros...\n", n);
 
         for (int r = 0; r < repeticoes; r++) {
             tabelahash *th = criar_tabela(n);
@@ -132,8 +153,6 @@ void modulo_analise_experimental() {
             destruir_tabela(th);
         }
         
-        printf("Concluido!\n"); 
-        
         tempos_ins[t] = t_ins / repeticoes;
         tempos_b_ok[t] = t_busca_ok / repeticoes;
         tempos_b_aus[t] = t_busca_aus / repeticoes;
@@ -141,7 +160,7 @@ void modulo_analise_experimental() {
     }
 
     printf("\n===================================================================================\n");
-    printf("                              RELATORIO DE DESEMPENHO (Medias de 5 repeticoes)\n");
+    printf("                              RELATORIO DE DESEMPENHO (Medias de 1000 repeticoes)\n");
     printf("===================================================================================\n");
     printf(" Registros | Capacidade |  Colisoes  | Ins. (ms)   | B. Sucesso (ms) | B. Falha (ms)\n");
     printf("-----------------------------------------------------------------------------------\n");
@@ -151,7 +170,6 @@ void modulo_analise_experimental() {
                tempos_ins[t], tempos_b_ok[t], tempos_b_aus[t]);
     }
     printf("===================================================================================\n");
-    pausar();
 }
 
 // FUNÇÃO MAIN
